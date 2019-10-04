@@ -123,7 +123,7 @@ class emailplatform extends Module {
     public function __construct() {
         
         $this->name = 'emailplatform';
-        $this->version = '1.0.1';
+        $this->version = '1.0.2';
         $this->tab = 'emailing';
         $this->author = 'emailplatform.com';
 
@@ -414,7 +414,7 @@ class emailplatform extends Module {
             $settings = array();
             
             $cfData = $this->customfieldsDefault[$value->fieldname];
-            $fieldname = self::CUSTOM_FIELD_PREFIX . $cfData['fieldname'];
+            $fieldname = self::CUSTOM_FIELD_PREFIX . 'shop-' . $this->id_shop . '_'. $cfData['fieldname'];
 
             if ($this->customFieldExists($fieldname))
                 continue;

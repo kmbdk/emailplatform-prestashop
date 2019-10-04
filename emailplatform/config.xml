@@ -2,7 +2,7 @@
 <module>
     <name>emailplatform</name>
     <displayName><![CDATA[eMailPlatform Subscription Module]]></displayName>
-    <version><![CDATA[1.0.1]]></version>
+    <version><![CDATA[1.0.2]]></version>
     <description><![CDATA[Import and export new subscribers to eMailPlatform]]></description>
     <author><![CDATA[emailplatform.com]]></author>
     <tab><![CDATA[emailing]]></tab>
