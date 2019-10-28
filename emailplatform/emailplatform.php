@@ -61,6 +61,7 @@ class emailplatform extends Module {
      * @var string
      */
     private $id_list;
+    private $use_mobile;
 
     /**
      * the custom fields that will be exported
@@ -123,7 +124,7 @@ class emailplatform extends Module {
     public function __construct() {
         
         $this->name = 'emailplatform';
-        $this->version = '1.0.2';
+        $this->version = '1.0.3';
         $this->tab = 'emailing';
         $this->author = 'emailplatform.com';
 
@@ -163,6 +164,7 @@ class emailplatform extends Module {
             $this->api_token = $this->_moduleSettings->api_token;
             $this->api_username = $this->_moduleSettings->api_username;
             $this->id_list = $this->_moduleSettings->id_list;
+            $this->use_mobile = $this->_moduleSettings->use_mobile;
             $this->customfields = $this->_moduleSettings->customfields;
             $this->customfieldids = $this->_moduleSettings->customfieldids;
             
@@ -221,6 +223,7 @@ class emailplatform extends Module {
                     'api_token' => $this->api_token,
                     'api_username' => $this->api_username,
                     'id_list' => '',
+                    'use_mobile' => '',
                     'customfields' => '',
                     'customfieldids' => ''
                 ));
@@ -240,6 +243,7 @@ class emailplatform extends Module {
         if (Tools::isSubmit('saveOptions')) {
             
             $this->id_list = Tools::getvalue('list');
+            $this->use_mobile = Tools::getvalue('mobile');
 
             if (empty($this->id_list))
                 $this->_errors['listOptions'] = $this->l('No list chosen');
@@ -258,6 +262,7 @@ class emailplatform extends Module {
                 $this->customfields = json_decode(json_encode($customfields));
 
                 $this->_moduleSettings->id_list = $this->id_list;
+                $this->_moduleSettings->use_mobile = $this->use_mobile;
                 $this->_moduleSettings->customfields = $this->customfields;
                 
                 $moduleSettings = json_encode($this->_moduleSettings);
@@ -316,6 +321,7 @@ class emailplatform extends Module {
             'api_username' => $this->api_username,
             'selected_list' => $this->id_list,
             'lists' => $Lists,
+            'mobile' => $this->use_mobile,
             'customfieldsDefault' => $viewCustomFieldsDefault,
             'customfields' => $this->customfields,
             'cronUrl' => $this->cronUrl,
@@ -346,8 +352,10 @@ class emailplatform extends Module {
             foreach (Customer::getCustomers() as $customer) {
                 
                 $subscriber = $this->prepareSubscriber($customer['id_customer']);
-                if ($subscriber !== false)
-                    $this->addSubscribers($subscriber);
+                if ($subscriber !== false){
+                    if(!$this->addSubscribers($subscriber))
+                        $this->updateSubscribers($subscriber, 1);
+                }
                     
             }
             
@@ -364,7 +372,7 @@ class emailplatform extends Module {
                     'listid' => $this->id_list,
                     'emailaddress' => $subscriber['email'],
                     'mobile' => false,
-                    'mobile_prefix' => false,
+                    'mobilePrefix' => false,
                     'contactFields' => $customfields,
                     'add_to_autoresponders' => true,
                     'skip_listcheck' => false,
@@ -495,7 +503,11 @@ class emailplatform extends Module {
             if (isset($cfData['objProperty'])){
                 
                 if($cfData['empFieldtype'] == 'date'){
-                    $customfields[$i]['value'] = date('d-m-Y', strtotime($customer->{$cfData['objProperty']}));
+                    if($customer->{$cfData['objProperty']} != '0000-00-00'){
+                        $customfields[$i]['value'] = date('d-m-Y', strtotime($customer->{$cfData['objProperty']}));
+                    } else {
+                        $customfields[$i]['value'] = '';
+                    }
                 } else {
                     $customfields[$i]['value'] = $customer->{$cfData['objProperty']};
                 }
@@ -542,8 +554,36 @@ class emailplatform extends Module {
     }
 
     public function prepareSubscriber($id_customer, $update = false) {
+        
         $customer = new Customer($id_customer);
+        
+        $mobile = false;
+        $mobile_prefix = false;
+        
+        if($this->use_mobile){
+            
+            $address = new Address();
+            $address_id = $address->getFirstCustomerAddressId($id_customer, true);
 
+            $customer_address = new Address($address_id);
+
+            if($customer_address->phone_mobile && $customer_address->id_country){
+
+                $country = new CountryCore($customer_address->id_country);
+                $mobile = $customer_address->phone_mobile;
+                $mobile_prefix = $country->call_prefix;
+                
+            }
+            elseif($customer_address->phone && $customer_address->id_country){
+
+                $country = new CountryCore($customer_address->id_country);
+                $mobile = $customer_address->phone;
+                $mobile_prefix = $country->call_prefix;
+       
+            }
+            
+        }
+        
         if ($customer->newsletter) {
             
             $name = array(
@@ -564,16 +604,16 @@ class emailplatform extends Module {
                     'listid' => $this->id_list,
                     'subscriberid' => false,
                     'emailaddress' => $customer->email,
-                    'mobile' => false,
-                    'mobilePrefix' => false,
+                    'mobile' => $mobile,
+                    'mobilePrefix' => $mobile_prefix,
                     'customfields' => $contactFields
                 );
             } else {
                 return array(
                     'listid' => $this->id_list,
                     'emailaddress' => $customer->email,
-                    'mobile' => false,
-                    'mobile_prefix' => false,
+                    'mobile' => $mobile,
+                    'mobilePrefix' => $mobile_prefix,
                     'contactFields' => $contactFields,
                     'add_to_autoresponders' => true,
                     'skip_listcheck' => false,
@@ -895,7 +935,7 @@ class emailplatform extends Module {
                 'listid' => $this->id_list,
                 'emailaddress' => Tools::getvalue('email'),
                 'mobile' => false,
-                'mobile_prefix' => false,
+                'mobilePrefix' => false,
                 'contactFields' => $customfields,
                 'add_to_autoresponders' => true,
                 'skip_listcheck' => false,

@@ -109,6 +109,22 @@
 					<p class="help-block">{l s="The destination list"}</p>
 				</div>
 			</div>
+                                
+                        <div class="form-group">
+				<label class="control-label col-lg-3" for="list">{l s="Create with mobile"}</label>
+				<div class="col-lg-9">
+					<select id="mobile" name="mobile" class="form-control fixed-width-xl">
+                                            {if $mobile == '1'}
+                                                    {assign var='selected' value=' selected="selected"'}
+                                            {else}
+                                                    {assign var='selected' value=''}
+                                            {/if}
+                                            <option{if $mobile == '1'} selected='yes' {/if} value="0">No</option>
+                                            <option{if $mobile == '1'} selected='yes' {/if} value="1">Yes</option>
+					</select>
+					<p class="help-block">{l s="Be aware that the same number can't exist on multiple subscribers in eMailPlatform"}</p>
+				</div>
+			</div>
 
 
 			<div class="form-group">
